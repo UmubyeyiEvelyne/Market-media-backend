@@ -6,6 +6,7 @@ const User = require("../models/User");
 const Cart = require("../models/Cart");
 const Category = require("../models/Category");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const {
   GraphQLObjectType,
@@ -160,9 +161,44 @@ const CartType = new GraphQLObjectType({
   }),
 });
 
+const AuthDataType = new GraphQLObjectType({
+  name: "AuthData",
+  fields: () => ({
+    userId: { type: GraphQLID },
+    userRole: { type: GraphQLString },
+    token: { type: GraphQLString },
+    tokenExpiration: { type: GraphQLInt },
+  })
+});
+
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
+    login: { 
+      type: AuthDataType,
+      args: { 
+        email: { type: GraphQLID },
+        password: { type: GraphQLString} 
+      },
+      async resolve(parent, args){
+        const user = await User.findOne({ email: args.email});
+        if (!user) {
+          throw new Error('user does not exists!');
+        }
+
+        const isEqual = await bcrypt.compare(args.password, user.password);
+
+        if (!isEqual) {
+          throw new Error('Password is  incorrect!');
+        }
+
+        const token = jwt.sign({userId: user.id, userRole: user.category, email: user.email}, 'mysupersecretkey', {
+          expiresIn: '1h'
+        });
+
+        return {userId: user.id, userRole: user.category, token: token, tokenExpiration: 1 }
+      }
+    },
     products: {
       type: new GraphQLList(ProductType),
       resolve(parent, args) {
@@ -261,19 +297,29 @@ const mutation = new GraphQLObjectType({
         price: { type: new GraphQLNonNull(GraphQLFloat) },
         businessId: { type: new GraphQLNonNull(GraphQLID) },
       },
-      resolve(parent, args) {
-        const product = new Product({
-          image: args.image,
-          name: args.name,
-          description: args.description,
-          categoryId: args.categoryId,
-          unit: args.unit,
-          quantity: args.quantity,
-          price: args.price,
-          businessId: args.businessId,
-        });
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
+        // console.log(req.userRole);
 
-        return product.save();
+        // if ( !req.userRole === "Seller") {
+        //   throw new Error('The user is not a seller');
+        // }
+        // } else{
+          const product = new Product({
+            image: args.image,
+            name: args.name,
+            description: args.description,
+            categoryId: args.categoryId,
+            unit: args.unit,
+            quantity: args.quantity,
+            price: args.price,
+            businessId: args.businessId,
+          });
+          
+          return product.save();
+        // }
       },
     },
     deleteProduct: {
@@ -281,7 +327,13 @@ const mutation = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLID) },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
+        // if (!req.userRole === "Seller" || !req.userRole === "Admin") {
+        //   throw new Error('The user is not a seller or an admin');
+        // }
         return Product.findByIdAndRemove(args.id);
       },
     },
@@ -297,7 +349,13 @@ const mutation = new GraphQLObjectType({
         quantity: { type: GraphQLFloat },
         price: { type: GraphQLFloat },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
+        // if (!req.userRole === "Seller") {
+        //   throw new Error('The user is not a seller');
+        // }
         return Product.findByIdAndUpdate(
           args.id,
           {
@@ -345,7 +403,10 @@ const mutation = new GraphQLObjectType({
         shippingAddress: { type: new GraphQLNonNull(GraphQLString) },
         shippingMethod: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
         const order = new Order({
           userId: args.userId,
           productId: args.productId,
@@ -367,7 +428,10 @@ const mutation = new GraphQLObjectType({
         userId: { type: new GraphQLNonNull(GraphQLID) },
         productId: { type: new GraphQLNonNull(GraphQLID) },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
         const cart = new Cart({
           userId: args.userId,
           productId: args.productId,
@@ -385,7 +449,10 @@ const mutation = new GraphQLObjectType({
         rating: { type: new GraphQLNonNull(GraphQLInt) },
         comment: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
         const review = new Review({
           userId: args.userId,
           businessId: args.businessId,
@@ -426,7 +493,10 @@ const mutation = new GraphQLObjectType({
         },
         ownerId: { type: new GraphQLNonNull(GraphQLID) },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
         const business = new Business({
           image: args.image,
           name: args.name,
@@ -453,7 +523,10 @@ const mutation = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLID) },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
         Product.find({ businessId: args.id }).then((products) => {
           products.forEach((product) => {
             product.remove();
@@ -500,7 +573,10 @@ const mutation = new GraphQLObjectType({
         },
         ownerId: { type: new GraphQLNonNull(GraphQLID) },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
         return Business.findByIdAndUpdate(
           args.id,
           {
@@ -565,7 +641,10 @@ const mutation = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLID) },
       },
-      resolve(parent, args) {
+      resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
         return User.findByIdAndRemove(args.id);
       },
     },
@@ -588,7 +667,10 @@ const mutation = new GraphQLObjectType({
           }),
         },
       },
-      async resolve(parent, args) {
+      async resolve(parent, args, req) {
+        // if (!req.isAuth){
+        //   throw new Error('Unauthenticated');
+        // }
         return User.findByIdAndUpdate(
           args.id,
           {
