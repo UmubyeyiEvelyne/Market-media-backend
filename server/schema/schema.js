@@ -196,6 +196,8 @@ const RootQuery = new GraphQLObjectType({
           expiresIn: '1h'
         });
 
+        console.log(user.category);
+
         return {userId: user.id, userRole: user.category, token: token, tokenExpiration: 1 }
       }
     },
@@ -301,25 +303,24 @@ const mutation = new GraphQLObjectType({
         // if (!req.isAuth){
         //   throw new Error('Unauthenticated');
         // }
-        // console.log(req.userRole);
+        // console.log("req.role", req.userRole);
 
-        // if ( !req.userRole === "Seller") {
+        // if (req.userRole === "Buyer" || req.userRole === "Admin") {
         //   throw new Error('The user is not a seller');
         // }
-        // } else{
-          const product = new Product({
-            image: args.image,
-            name: args.name,
-            description: args.description,
-            categoryId: args.categoryId,
-            unit: args.unit,
-            quantity: args.quantity,
-            price: args.price,
-            businessId: args.businessId,
-          });
-          
-          return product.save();
-        // }
+
+        const product = new Product({
+          image: args.image,
+          name: args.name,
+          description: args.description,
+          categoryId: args.categoryId,
+          unit: args.unit,
+          quantity: args.quantity,
+          price: args.price,
+          businessId: args.businessId,
+        });
+        
+        return product.save(); 
       },
     },
     deleteProduct: {
