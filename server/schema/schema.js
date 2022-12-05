@@ -495,9 +495,9 @@ const mutation = new GraphQLObjectType({
         ownerId: { type: new GraphQLNonNull(GraphQLID) },
       },
       resolve(parent, args, req) {
-        // if (!req.isAuth){
-        //   throw new Error('Unauthenticated');
-        // }
+        if (!req.isAuth){
+          throw new Error('Unauthenticated');
+        }
         const business = new Business({
           image: args.image,
           name: args.name,
@@ -512,7 +512,8 @@ const mutation = new GraphQLObjectType({
           otherAddressDescription: args.otherAddressDescription,
           legalDocument: args.legalDocument,
           applicationStatus: args.applicationStatus,
-          ownerId: args.ownerId
+          // ownerId: args.ownerId
+          ownerId: req.userId
         });
 
         return business.save();
