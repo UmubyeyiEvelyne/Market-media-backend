@@ -48,7 +48,7 @@ const OrderType = new GraphQLObjectType({
         return Product.findById(parent.productId);
       },
     },
-    quantity: {type: GraphQLFloat},
+    quantity: { type: GraphQLFloat },
     business: {
       type: BusinessType,
       resolve(parent, args) {
@@ -139,6 +139,12 @@ const CategoryType = new GraphQLObjectType({
     id: { type: GraphQLID },
     image: { type: GraphQLString },
     name: { type: GraphQLString },
+    products: {
+      type: new GraphQLList(ProductType),
+      resolve(parent, args) {
+        return Product.find({ categoryId: parent.id });
+      },
+    },
   }),
 });
 
@@ -168,38 +174,60 @@ const AuthDataType = new GraphQLObjectType({
     userRole: { type: GraphQLString },
     token: { type: GraphQLString },
     tokenExpiration: { type: GraphQLInt },
-  })
+  }),
 });
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
-    login: { 
+    login: {
       type: AuthDataType,
-      args: { 
+      args: {
         email: { type: GraphQLID },
-        password: { type: GraphQLString} 
+        password: { type: GraphQLString },
       },
-      async resolve(parent, args){
-        const user = await User.findOne({ email: args.email});
+      async resolve(parent, args) {
+        const user = await User.findOne({ email: args.email });
         if (!user) {
-          throw new Error('user does not exists!');
+          throw new Error("user does not exists!");
         }
 
         const isEqual = await bcrypt.compare(args.password, user.password);
 
         if (!isEqual) {
-          throw new Error('Password is  incorrect!');
+          throw new Error("Password is  incorrect!");
         }
 
-        const token = jwt.sign({userId: user.id, userRole: user.category, email: user.email}, 'mysupersecretkey', {
-          expiresIn: '1h'
-        });
+        const token = jwt.sign(
+          { userId: user.id, userRole: user.category, email: user.email },
+          "mysupersecretkey",
+          {
+            expiresIn: "1h",
+          }
+        );
 
         console.log(user.category);
 
-        return {userId: user.id, userRole: user.category, token: token, tokenExpiration: 1 }
-      }
+        return {
+          userId: user.id,
+          userRole: user.category,
+          token: token,
+          tokenExpiration: 1,
+        };
+      },
+    },
+    categories: {
+      type: new GraphQLList(CategoryType),
+      resolve(parent, args) {
+        return Category.find();
+      },
+    },
+    category: { 
+      type: CategoryType,
+      args: { id: { type: GraphQLID } },
+      resolve(parent, args) {
+        return Category.findById(args.id);
+      },
     },
     products: {
       type: new GraphQLList(ProductType),
@@ -278,14 +306,13 @@ const RootQuery = new GraphQLObjectType({
       resolve(parent, args) {
         return Review.findById(args.id);
       },
-    }
+    },
   },
 });
 
 const mutation = new GraphQLObjectType({
   name: "Mutation",
   fields: {
-
     // Product
     addProduct: {
       type: ProductType,
@@ -319,8 +346,8 @@ const mutation = new GraphQLObjectType({
           price: args.price,
           businessId: args.businessId,
         });
-        
-        return product.save(); 
+
+        return product.save();
       },
     },
     deleteProduct: {
@@ -596,7 +623,7 @@ const mutation = new GraphQLObjectType({
               otherAddressDescription: args.otherAddressDescription,
               legalDocument: args.legalDocument,
               applicationStatus: args.applicationStatus,
-              ownerId: args.ownerId
+              ownerId: args.ownerId,
             },
           },
           { new: true }
@@ -623,7 +650,6 @@ const mutation = new GraphQLObjectType({
           }),
           defaultValue: "Buyer",
         },
-
       },
 
       async resolve(parent, args) {
@@ -632,7 +658,7 @@ const mutation = new GraphQLObjectType({
           email: args.email,
           phoneNumber: args.phoneNumber,
           password: await bcrypt.hash(args.password, 12),
-          category: args.category
+          category: args.category,
         });
 
         return user.save();
@@ -681,7 +707,7 @@ const mutation = new GraphQLObjectType({
               email: args.email,
               phoneNumber: args.phoneNumber,
               password: await bcrypt.hash(args.password, 12),
-              category: args.category
+              category: args.category,
             },
           },
           { new: true }
