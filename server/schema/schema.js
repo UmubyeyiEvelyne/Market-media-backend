@@ -105,6 +105,12 @@ const BusinessType = new GraphQLObjectType({
         return User.findById(parent.ownerId);
       },
     },
+    reviewsReceived:{
+      type: new GraphQLList(ReviewType),
+      resolve(parent, args) {
+        return Review.find({ businessId: parent.id });
+      },
+    }
   }),
 });
 
@@ -124,6 +130,8 @@ const ProductType = new GraphQLObjectType({
     unit: { type: GraphQLString },
     quantity: { type: GraphQLFloat },
     price: { type: GraphQLFloat },
+    manufacturer: { type: GraphQLString },
+    dateAdded: { type: GraphQLString },
     business: {
       type: BusinessType,
       resolve(parent, args) {
@@ -180,135 +188,148 @@ const AuthDataType = new GraphQLObjectType({
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
-    login: {
-      type: AuthDataType,
+    businessProducts: {
+      type: new GraphQLList(ProductType),
       args: {
-        email: { type: GraphQLID },
-        password: { type: GraphQLString },
+        businessId: { type: GraphQLID }
       },
       async resolve(parent, args) {
-        const user = await User.findOne({ email: args.email });
-        if (!user) {
-          throw new Error("user does not exists!");
+        const products = await Product.find({ businessId: args.businessId });
+        if (!products) {
+          throw new Error("Business has no products yet")
         }
-
-        const isEqual = await bcrypt.compare(args.password, user.password);
-
-        if (!isEqual) {
-          throw new Error("Password is  incorrect!");
-        }
-
-        const token = jwt.sign(
-          { userId: user.id, userRole: user.category, email: user.email },
-          "mysupersecretkey",
-          {
-            expiresIn: "1h",
+        return products;
+      },
+    },
+    login: {
+        type: AuthDataType,
+        args: {
+          email: { type: GraphQLID },
+          password: { type: GraphQLString },
+        },
+        async resolve(parent, args) {
+          const user = await User.findOne({ email: args.email });
+          if (!user) {
+            throw new Error("user does not exists!");
           }
-        );
 
-        console.log(user.category);
+          const isEqual = await bcrypt.compare(args.password, user.password);
 
-        return {
-          userId: user.id,
-          userRole: user.category,
-          token: token,
-          tokenExpiration: 1,
-        };
+          if (!isEqual) {
+            throw new Error("Password is  incorrect!");
+          }
+
+          const token = jwt.sign(
+            { userId: user.id, userRole: user.category, email: user.email },
+            "mysupersecretkey",
+            {
+              expiresIn: "1h",
+            }
+          );
+
+          console.log(user.category);
+
+          return {
+            userId: user.id,
+            userRole: user.category,
+            token: token,
+            tokenExpiration: 1,
+          };
+        },
+      },
+      categories: {
+        type: new GraphQLList(CategoryType),
+        resolve(parent, args) {
+          return Category.find();
+        },
+      },
+      category: {
+        type: CategoryType,
+        args: { id: { type: GraphQLID } },
+        resolve(parent, args) {
+          return Category.findById(args.id);
+        },
+      },
+      products: {
+        type: new GraphQLList(ProductType),
+        resolve(parent, args) {
+          return Product.find();
+        },
+      },
+      product: {
+        type: ProductType,
+        args: { id: { type: GraphQLID } },
+        resolve(parent, args) {
+          return Product.findById(args.id);
+        },
+      },
+      businesses: {
+        type: new GraphQLList(BusinessType),
+        resolve(parent, args) {
+          return Business.find();
+        },
+      },
+      business: {
+        type: BusinessType,
+        args: { id: { type: GraphQLID } },
+        resolve(parent, args) {
+          return Business.findById(args.id);
+        },
+      },
+      users: {
+        type: new GraphQLList(UserType),
+        resolve(parent, args) {
+          return User.find();
+        },
+      },
+      user: {
+        type: UserType,
+        args: { id: { type: GraphQLID } },
+        resolve(parent, args) {
+          return User.findById(args.id);
+        },
+      },
+      orders: {
+        type: new GraphQLList(OrderType),
+        resolve(parent, args) {
+          return Order.find();
+        },
+      },
+      order: {
+        type: OrderType,
+        args: { id: { type: GraphQLID } },
+        resolve(parent, args) {
+          return Order.findById(args.id);
+        },
+      },
+      cartItems: {
+        type: new GraphQLList(CartType),
+        resolve(parent, args) {
+          return Cart.find();
+        },
+      },
+      cartItem: {
+        type: CartType,
+        args: { id: { type: GraphQLID } },
+        resolve(parent, args) {
+          return Cart.findById(args.id);
+        },
+      },
+      reviews: {
+        type: new GraphQLList(ReviewType),
+        resolve(parent, args) {
+          return Review.find();
+        },
+      },
+      review: {
+        type: ReviewType,
+        args: { id: { type: GraphQLID } },
+        resolve(parent, args) {
+          return Review.findById(args.id);
+        },
       },
     },
-    categories: {
-      type: new GraphQLList(CategoryType),
-      resolve(parent, args) {
-        return Category.find();
-      },
-    },
-    category: { 
-      type: CategoryType,
-      args: { id: { type: GraphQLID } },
-      resolve(parent, args) {
-        return Category.findById(args.id);
-      },
-    },
-    products: {
-      type: new GraphQLList(ProductType),
-      resolve(parent, args) {
-        return Product.find();
-      },
-    },
-    product: {
-      type: ProductType,
-      args: { id: { type: GraphQLID } },
-      resolve(parent, args) {
-        return Product.findById(args.id);
-      },
-    },
-    businesses: {
-      type: new GraphQLList(BusinessType),
-      resolve(parent, args) {
-        return Business.find();
-      },
-    },
-    business: {
-      type: BusinessType,
-      args: { id: { type: GraphQLID } },
-      resolve(parent, args) {
-        return Business.findById(args.id);
-      },
-    },
-    users: {
-      type: new GraphQLList(UserType),
-      resolve(parent, args) {
-        return User.find();
-      },
-    },
-    user: {
-      type: UserType,
-      args: { id: { type: GraphQLID } },
-      resolve(parent, args) {
-        return User.findById(args.id);
-      },
-    },
-    orders: {
-      type: new GraphQLList(OrderType),
-      resolve(parent, args) {
-        return Order.find();
-      },
-    },
-    order: {
-      type: OrderType,
-      args: { id: { type: GraphQLID } },
-      resolve(parent, args) {
-        return Order.findById(args.id);
-      },
-    },
-    cartItems: {
-      type: new GraphQLList(CartType),
-      resolve(parent, args) {
-        return Cart.find();
-      },
-    },
-    cartItem: {
-      type: CartType,
-      args: { id: { type: GraphQLID } },
-      resolve(parent, args) {
-        return Cart.findById(args.id);
-      },
-    },
-    reviews: {
-      type: new GraphQLList(ReviewType),
-      resolve(parent, args) {
-        return Review.find();
-      },
-    },
-    review: {
-      type: ReviewType,
-      args: { id: { type: GraphQLID } },
-      resolve(parent, args) {
-        return Review.findById(args.id);
-      },
-    },
-  },
-});
+  });
 
 const mutation = new GraphQLObjectType({
   name: "Mutation",
@@ -320,10 +341,12 @@ const mutation = new GraphQLObjectType({
         image: { type: GraphQLString },
         name: { type: new GraphQLNonNull(GraphQLString) },
         description: { type: new GraphQLNonNull(GraphQLString) },
-        categoryId: { type: GraphQLNonNull(GraphQLID) },
+        categoryId: { type: new GraphQLNonNull(GraphQLID) },
         unit: { type: new GraphQLNonNull(GraphQLString) },
-        quantity: { type: new GraphQLNonNull(GraphQLFloat) },
-        price: { type: new GraphQLNonNull(GraphQLFloat) },
+        quantity: { type: new GraphQLNonNull(GraphQLString) },
+        price: { type: new GraphQLNonNull(GraphQLString) },
+        manufacturer: { type: GraphQLString },
+        dateAdded: { type:GraphQLString},
         businessId: { type: new GraphQLNonNull(GraphQLID) },
       },
       resolve(parent, args, req) {
@@ -342,8 +365,10 @@ const mutation = new GraphQLObjectType({
           description: args.description,
           categoryId: args.categoryId,
           unit: args.unit,
-          quantity: args.quantity,
-          price: args.price,
+          quantity: parseFloat(args.quantity),
+          price: parseFloat(args.price),
+          manufacturer: args.manufacturer,
+          dateAdded: args.dateAdded,
           businessId: args.businessId,
         });
 
@@ -376,6 +401,7 @@ const mutation = new GraphQLObjectType({
         unit: { type: GraphQLString },
         quantity: { type: GraphQLFloat },
         price: { type: GraphQLFloat },
+        manufacturer: {type: GraphQLString},
       },
       resolve(parent, args, req) {
         // if (!req.isAuth){
@@ -395,6 +421,7 @@ const mutation = new GraphQLObjectType({
               unit: args.unit,
               quantity: args.quantity,
               price: args.price,
+              manufacturer: args.manufacturer,
             },
           },
           { new: true }
@@ -522,7 +549,7 @@ const mutation = new GraphQLObjectType({
         ownerId: { type: new GraphQLNonNull(GraphQLID) },
       },
       resolve(parent, args, req) {
-        // if (!req.isAuth){
+        // if (!req.isAuth) {
         //   throw new Error('Unauthenticated');
         // }
         const business = new Business({
@@ -539,7 +566,8 @@ const mutation = new GraphQLObjectType({
           otherAddressDescription: args.otherAddressDescription,
           legalDocument: args.legalDocument,
           applicationStatus: args.applicationStatus,
-          ownerId: args.ownerId,
+          // ownerId: args.ownerId
+          ownerId: req.userId
         });
 
         return business.save();

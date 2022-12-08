@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const ProductSchema = mongoose.Schema({
     image: {
         type: 'string',
-        required: true,
     },
     name: {
         type: 'string',
@@ -29,6 +28,12 @@ const ProductSchema = mongoose.Schema({
     price: {
         type: 'number',
         required: true,
+    },
+    manufacturer:{
+        type: 'string',
+    },
+    dateAdded: {
+        type: 'string',
     },
     businessId:{
         type: mongoose.Schema.Types.ObjectId,

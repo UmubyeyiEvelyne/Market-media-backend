@@ -52,7 +52,7 @@ const BusinessSchema = mongoose.Schema({
     ownerId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }
+    },
     // addedProducts: [
     //     {
     //         type: mongoose.Schema.Types.ObjectId,  /** why can't we have a sellerId foreign key in products instead */
@@ -65,12 +65,12 @@ const BusinessSchema = mongoose.Schema({
     //         ref: 'Order'
     //     }
     // ], 
-    // reviewsReceived: [
-    //     {
-    //         type: mongoose.Schema.Types.ObjectId,  /** why can't we have a sellerId foreign key in reviews instead */
-    //         ref: 'Review'
-    //     }
-    // ],
+    reviewsReceived: [
+        {
+            type: mongoose.Schema.Types.ObjectId,  /** why can't we have a sellerId foreign key in reviews instead */
+            ref: 'Review'
+        }
+    ],
 
 })
 
