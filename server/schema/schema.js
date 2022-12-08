@@ -105,6 +105,12 @@ const BusinessType = new GraphQLObjectType({
         return User.findById(parent.ownerId);
       },
     },
+    reviewsReceived:{
+      type: new GraphQLList(ReviewType),
+      resolve(parent, args) {
+        return Review.find({ businessId: parent.id });
+      },
+    }
   }),
 });
 
@@ -126,7 +132,7 @@ const ProductType = new GraphQLObjectType({
     price: { type: GraphQLFloat },
     manufacturer: { type: GraphQLString },
     dateAdded: { type: GraphQLString },
-    businessId: {
+    business: {
       type: BusinessType,
       resolve(parent, args) {
         return Business.findById(parent.businessId);
