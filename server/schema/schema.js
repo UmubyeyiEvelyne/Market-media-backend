@@ -124,7 +124,7 @@ const ProductType = new GraphQLObjectType({
     unit: { type: GraphQLString },
     quantity: { type: GraphQLFloat },
     price: { type: GraphQLFloat },
-    businessId: {
+    business: {
       type: BusinessType,
       resolve(parent, args) {
         return Business.findById(parent.businessId);
