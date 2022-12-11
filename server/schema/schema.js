@@ -18,6 +18,7 @@ const {
   GraphQLEnumType,
   GraphQLFloat,
   GraphQLInt,
+  
 } = require("graphql");
 
 const UserType = new GraphQLObjectType({
@@ -58,6 +59,7 @@ const OrderType = new GraphQLObjectType({
     phoneNumber: { type: GraphQLString },
     shippingAddress: { type: GraphQLString },
     shippingMethod: { type: GraphQLString },
+    orderDate: { type: GraphQLString },
   }),
 });
 
@@ -105,7 +107,13 @@ const BusinessType = new GraphQLObjectType({
         return User.findById(parent.ownerId);
       },
     },
-  }),
+    review: {
+      type: new GraphQLList(ReviewType),
+      resolve(parent, args) {
+        return Review.findById(parent.reviewId);
+      },
+  },
+}),
 });
 
 const ProductType = new GraphQLObjectType({
@@ -451,6 +459,7 @@ const mutation = new GraphQLObjectType({
         phoneNumber: { type: new GraphQLNonNull(GraphQLString) },
         shippingAddress: { type: new GraphQLNonNull(GraphQLString) },
         shippingMethod: { type: new GraphQLNonNull(GraphQLString) },
+        orderDate: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve(parent, args, req) {
         // if (!req.isAuth){
@@ -464,6 +473,7 @@ const mutation = new GraphQLObjectType({
           phoneNumber: args.phoneNumber,
           shippingAddress: args.shippingAddress,
           shippingMethod: args.shippingMethod,
+          orderDate: args.orderDate,
         });
 
         return order.save();

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Review = require('./Review');
 
 const BusinessSchema = mongoose.Schema({
     image: {
@@ -52,7 +53,12 @@ const BusinessSchema = mongoose.Schema({
     ownerId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }
+    },
+    reviewId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Review'
+    },
+        
     // addedProducts: [
     //     {
     //         type: mongoose.Schema.Types.ObjectId,  /** why can't we have a sellerId foreign key in products instead */

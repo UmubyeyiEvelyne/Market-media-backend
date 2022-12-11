@@ -28,7 +28,11 @@ const OrderSchema = mongoose.Schema({
     shippingMethod: {
         type: 'string',
         required: true
-    }
+    },
+    orderDate: {
+        type: 'string',
+
+    },
     
 })
 
