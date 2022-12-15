@@ -21,6 +21,12 @@ const userSchema = mongoose.Schema({
         type: 'string',
         enum: ['Admin', 'Seller', 'Buyer'],
     }, 
+    // orderedProducts: [
+    //     {
+    //         type: mongoose.Schema.Types.ObjectId,   
+    //         ref: 'Order'
+    //     }
+    // ],
 })
 
 module.exports = mongoose.model('User', userSchema);

@@ -53,6 +53,9 @@ const BusinessSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    dateSubmitted: {
+        type: 'string', 
+    },
     // addedProducts: [
     //     {
     //         type: mongoose.Schema.Types.ObjectId,  /** why can't we have a sellerId foreign key in products instead */

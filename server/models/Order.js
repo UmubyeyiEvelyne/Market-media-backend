@@ -10,7 +10,7 @@ const OrderSchema = mongoose.Schema({
         ref: 'Product'
     },
     quantity:{
-        type: 'number',
+        type: 'string',
         required: true,
     },
     businessId:{
