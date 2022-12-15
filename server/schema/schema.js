@@ -373,6 +373,16 @@ const RootQuery = new GraphQLObjectType({
         return avg_rating;
       },
     },    
+    getBusiness: {
+      type: BusinessType,
+      args: { 
+        ownerId: {type: GraphQLID}
+      },
+      async resolve(parent, args){
+        const business = await Business.findOne({ownerId: args.ownerId});
+        return business;
+      }
+    },
     login: {
       type: AuthDataType,
       args: {
@@ -902,7 +912,7 @@ const mutation = new GraphQLObjectType({
       type: UserType,
       args: {
         name: { type: new GraphQLNonNull(GraphQLString) },
-        image: { type: new GraphQLNonNull(GraphQLString) },
+        image: { type: GraphQLString },
         email: { type: new GraphQLNonNull(GraphQLString) },
         phoneNumber: { type: new GraphQLNonNull(GraphQLString) },
         password: { type: new GraphQLNonNull(GraphQLString) },
