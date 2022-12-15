@@ -5,6 +5,10 @@ const userSchema = mongoose.Schema({
         type: 'string',
         required: true,
     },
+    image:{
+        type: 'string',
+        required: true,
+    },
     email: {
         type: 'string',
         required: true,

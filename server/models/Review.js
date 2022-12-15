@@ -16,6 +16,10 @@ const ReviewSchema = mongoose.Schema({
     comment: {
         type: 'string',
         required: true
+    },
+    dateAdded:{
+        type: 'string',
+        required: true
     }
     
 });
