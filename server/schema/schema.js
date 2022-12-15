@@ -25,6 +25,7 @@ const UserType = new GraphQLObjectType({
   fields: () => ({
     id: { type: GraphQLID },
     name: { type: GraphQLString },
+    image: { type: GraphQLString },
     email: { type: GraphQLString },
     phoneNumber: { type: GraphQLString },
     password: { type: GraphQLString },
@@ -58,6 +59,8 @@ const OrderType = new GraphQLObjectType({
     phoneNumber: { type: GraphQLString },
     shippingAddress: { type: GraphQLString },
     shippingMethod: { type: GraphQLString },
+    orderDate: { type: GraphQLString },
+    status: { type: GraphQLString },
   }),
 });
 
@@ -79,8 +82,38 @@ const ReviewType = new GraphQLObjectType({
     },
     rating: { type: GraphQLInt },
     comment: { type: GraphQLString },
+    dateAdded: { type: GraphQLString}
   }),
 });
+
+// const ReviewStatsType = new GraphQLObjectType({
+//   name: "ReviewStats",
+//   fields: () => ({
+//     reviews: {
+//       type: new GraphQLList(ReviewType),
+//       args: {
+//         businessId: { type: GraphQLID }
+//       },
+//       async resolve(parent, args) {
+//         const reviews = await Review.find({ businessId: args.businessId });
+//         if (!reviews) {
+//           throw new Error("Business has no reviews yet")
+//         }
+//         return reviews;
+//       },
+//     },
+//     count: { 
+//       type: GraphQLInt,
+//       args: {
+//         businessId: { type: GraphQLID }
+//       },
+//       async resolve(parent, args) {
+//         const nbr = await Review.count({ businessId: args.businessId });
+//         return nbr;
+//       },
+//     }
+//   }),
+// });
 
 const BusinessType = new GraphQLObjectType({
   name: "Business",
@@ -195,6 +228,106 @@ const RootQuery = new GraphQLObjectType({
         return products;
       },
     },
+    // findProduct: {
+    //   type: new GraphQLList(ProductType),
+    //   args: {
+    //     name: { type: GraphQLString }
+    //   },
+    //   async resolve(parent, args) {
+    //     const products = await Product.find(where: {name: {_ilike: `%${args.name}%`}});
+
+    //     if (!products) {
+    //       throw new Error("Product not found")
+    //     }
+    //     return products
+    //   },
+    // },
+    findProduct: {
+      type: new GraphQLList(ProductType),
+      args: {
+        name: { type: GraphQLString }
+      },
+      async resolve(parent, args) {
+        const products = await Product.find({ name: args.name });
+
+        if (!products) {
+          throw new Error("Product not found")
+        }
+        return products
+      },
+    },
+    businessReviews: {
+      type: new GraphQLList(ReviewType),
+      args: {
+        businessId: { type: GraphQLID }
+      },
+      async resolve(parent, args) {
+        const reviews = await Review.find({ businessId: args.businessId });
+        if (!reviews) {
+          throw new Error("Business has no reviews yet")
+        }
+        return reviews;
+      },
+    },
+    businessOrders: {
+      type: new GraphQLList(OrderType),
+      args: {
+        businessId: { type: GraphQLID }
+      },
+      async resolve(parent, args) {
+        const orders = await Order.find({ businessId: args.businessId });
+        if (!orders) {
+          throw new Error("Business has no orders yet")
+        }
+        return orders;
+      },
+    },
+    userExists: {
+      type: UserType,
+      args: {
+        email: { type: GraphQLID }
+      },
+      async resolve(parent, args) {
+        const user = await User.find({ email: args.email });
+        if (!user) {
+          throw new Error("User does not exist")
+        }
+        return user;
+      },
+    },
+    businessReviewsCount: { 
+      type: GraphQLInt,
+      args: {
+        businessId: { type: GraphQLID }
+      },
+      async resolve(parent, args) {
+        const reviews = await Review.find({ businessId: args.businessId });
+        const nbr = reviews.length;
+        if (nbr == 0) {
+          return 0;
+        }
+        return nbr;
+      },
+    },
+    businessAverageRating: { 
+      type: GraphQLFloat,
+      args: {
+        businessId: { type: GraphQLID }
+      },
+      async resolve(parent, args) {
+        const reviews = await Review.find({ businessId: args.businessId });
+        const nbr = reviews.length;
+        if (nbr == 0) {
+          return 0;
+        }
+        let sum = 0;
+        for (let i = 0; i < nbr; i++) {
+          sum += reviews[i].rating;
+        }
+        let avg_rating = sum/nbr        
+        return avg_rating;
+      },
+    },    
     login: {
         type: AuthDataType,
         args: {
@@ -372,16 +505,42 @@ const mutation = new GraphQLObjectType({
     deleteProduct: {
       type: ProductType,
       args: {
-        id: { type: new GraphQLNonNull(GraphQLID) },
+        id: { type: new GraphQLNonNull(   GraphQLID) },
       },
       resolve(parent, args, req) {
         // if (!req.isAuth){
         //   throw new Error('Unauthenticated');
         // }
         // if (!req.userRole === "Seller" || !req.userRole === "Admin") {
-        //   throw new Error('The user is not a seller or an admin');
-        // }
+        //   throw new Error('The user is not a seller or an admin');bAVbbNn
+        // } Z 
         return Product.findByIdAndRemove(args.id);
+      },
+    },
+    changeOrderStatusIncomplete: {
+      type: OrderType,
+      args: {
+        id: { type: new GraphQLNonNull(   GraphQLID) },
+      },
+      resolve(parent, args, req) {
+        return Order.findByIdAndUpdate(args.id,{
+          $set: {
+            status:"incomplete"
+          },
+        });
+      },
+    },
+    changeOrderStatusComplete: {
+      type: OrderType,
+      args: {
+        id: { type: new GraphQLNonNull(   GraphQLID) },
+      },
+      resolve(parent, args, req) {
+        return Order.findByIdAndUpdate(args.id,{
+          $set: {
+            status:"complete"
+          },
+        });
       },
     },
     updateProduct: {
@@ -393,8 +552,8 @@ const mutation = new GraphQLObjectType({
         description: { type: GraphQLString },
         category: { type: GraphQLID },
         unit: { type: GraphQLString },
-        quantity: { type: GraphQLFloat },
-        price: { type: GraphQLFloat },
+        quantity: { type: GraphQLString },
+        price: { type: GraphQLString },
         manufacturer: {type: GraphQLString},
       },
       resolve(parent, args, req) {
@@ -451,6 +610,17 @@ const mutation = new GraphQLObjectType({
         phoneNumber: { type: new GraphQLNonNull(GraphQLString) },
         shippingAddress: { type: new GraphQLNonNull(GraphQLString) },
         shippingMethod: { type: new GraphQLNonNull(GraphQLString) },
+        orderDate: { type: new GraphQLNonNull(GraphQLString) },
+        status: {
+          type: new GraphQLEnumType({
+            name: "status",
+            values: {
+              complete: { value: "complete" },
+              incomplete: { value: "incomplete" },
+            },
+          }),
+          defaultValue: "incomplete",
+        },
       },
       resolve(parent, args, req) {
         // if (!req.isAuth){
@@ -464,6 +634,8 @@ const mutation = new GraphQLObjectType({
           phoneNumber: args.phoneNumber,
           shippingAddress: args.shippingAddress,
           shippingMethod: args.shippingMethod,
+          orderDate: args.orderDate,
+          status:args.status,
         });
 
         return order.save();
@@ -497,6 +669,7 @@ const mutation = new GraphQLObjectType({
         businessId: { type: new GraphQLNonNull(GraphQLID) },
         rating: { type: new GraphQLNonNull(GraphQLInt) },
         comment: { type: new GraphQLNonNull(GraphQLString) },
+        dateAdded: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve(parent, args, req) {
         // if (!req.isAuth){
@@ -507,6 +680,7 @@ const mutation = new GraphQLObjectType({
           businessId: args.businessId,
           rating: args.rating,
           comment: args.comment,
+          dateAdded: args.dateAdded,
         });
 
         return review.save();
@@ -621,7 +795,7 @@ const mutation = new GraphQLObjectType({
             },
           }),
         },
-        ownerId: { type: new GraphQLNonNull(GraphQLID) },
+        ownerId: { type: GraphQLID },
       },
       resolve(parent, args, req) {
         // if (!req.isAuth){
@@ -657,6 +831,7 @@ const mutation = new GraphQLObjectType({
       type: UserType,
       args: {
         name: { type: new GraphQLNonNull(GraphQLString) },
+        image: { type: new GraphQLNonNull(GraphQLString) },
         email: { type: new GraphQLNonNull(GraphQLString) },
         phoneNumber: { type: new GraphQLNonNull(GraphQLString) },
         password: { type: new GraphQLNonNull(GraphQLString) },
@@ -676,6 +851,7 @@ const mutation = new GraphQLObjectType({
       async resolve(parent, args) {
         const user = new User({
           name: args.name,
+          image: args.image,
           email: args.email,
           phoneNumber: args.phoneNumber,
           password: await bcrypt.hash(args.password, 12),
@@ -702,6 +878,7 @@ const mutation = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLID) },
         name: { type: GraphQLString },
+        image: { type: GraphQLString },
         email: { type: GraphQLString },
         phoneNumber: { type: GraphQLString },
         password: { type: GraphQLString },
@@ -725,6 +902,7 @@ const mutation = new GraphQLObjectType({
           {
             $set: {
               name: args.name,
+              image: args.image,
               email: args.email,
               phoneNumber: args.phoneNumber,
               password: await bcrypt.hash(args.password, 12),

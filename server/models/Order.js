@@ -28,8 +28,15 @@ const OrderSchema = mongoose.Schema({
     shippingMethod: {
         type: 'string',
         required: true
+    },
+    orderDate: {
+        type: 'string',
+        required: true
+    },
+    status:{
+        type: 'string',
+        enum: ['complete', 'incomplete'],
     }
-    
 })
 
 module.exports = mongoose.model('Order', OrderSchema);
